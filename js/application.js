@@ -6,27 +6,57 @@ $(document).ready(function(){
   //Class
   var Chart = function(){
     this.graphData = [];
-  }; 
+    this.weeklySMAData = [];
+    this.monthlySMAData = [];
+  }; //end of Chart
 
   Chart.prototype.getAjaxData = function(){
     
-    //2. data wraggling
+    //2. data wraggling - weekly data
     var callBackFunction = function(response){
-        // console.log('response');
-        var items = response.data;
-        var item;
+      // console.log('response');
+      var items = response.data;
+      var item;
 
-        for (var i = 0; i < items.length; i++){
-          item = items[i];
-          this.graphData.push({
-            x: new Date(item[0]),
-            y: item[1]
-          });
-        }; // end of for
+      for (var i = 0; i < items.length; i++){
+        item = items[i];
+        this.graphData.push({
+          x: new Date(item[0]),
+          y: item[1]
+        });
+      }; // end of for
 
-        // console.log(this.graphData);
-        this.graphChart();
-      };// end of callBackFunction
+
+      // 4. get monthly avg 
+      var sliceStarts;
+      var sliceEnds; 
+
+      for (var i = 0; i < this.graphData.length - 3; i++){
+        sliceStarts = i; 
+        sliceEnds = i+4; 
+        var xValue = this.graphData[i].x;
+
+        var monthlyData = this.graphData.slice(sliceStarts,sliceEnds); 
+
+        var sum = 0;
+        for (var j = 0; j < monthlyData.length; j++){
+          var yValue = monthlyData[j].y;
+          sum += yValue;
+        } //end of for
+
+        var monthlyAvg = sum/4;
+        this.monthlySMAData.push({
+          x: xValue,
+          y: monthlyAvg 
+        });
+      } // end of for 
+
+      console.log(this.monthlySMAData);
+
+      // console.log(this.graphData);
+      this.graphChart();
+
+    } //end of callBackFunction
 
     //1. grabbing data
     $.ajax({
@@ -37,7 +67,6 @@ $(document).ready(function(){
 
     });//end of .ajax
   } //end of getAjaxData
-
 
   //3. Graph 
   Chart.prototype.graphChart = function(){
@@ -72,18 +101,21 @@ $(document).ready(function(){
       },
       series: [
         {
-        name: 'daily',
-        data: this.graphData
+        name: 'weekly',
+        data: this.graphData.reverse()
+        },
+        {
+        name: 'monthly',
+        data: this.monthlySMAData.reverse()
         }
       ]
 
     }; // end of chartConfig
-    console.log(chartConfig);
-    console.log(this.graphData);
+    // console.log(chartConfig); 
+    // console.log(this.graphData); 
     $('#chart').highcharts(chartConfig);  
 
   }; //end of graphChart
-
 
 
   //instance 
